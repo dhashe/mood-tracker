@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mood Tracker</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+
+        .container {
+            position: relative;
+            width: 80vmin;
+            height: 80vmin;
+            max-width: 500px;
+            max-height: 500px;
+        }
+
+        .quadrant {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-weight: bold;
+            user-select: none;
+            color: black;
+        }
+
+        .quadrant:hover {
+            opacity: 0.8;
+        }
+
+        .top-left {
+            top: 0;
+            left: 0;
+            background-color: #FF6B6B;
+            border-radius: 10px 0 0 0;
+        }
+
+        .top-right {
+            top: 0;
+            right: 0;
+            background-color: #FFE66D;
+            border-radius: 0 10px 0 0;
+        }
+
+        .bottom-left {
+            bottom: 0;
+            left: 0;
+            background-color: #A6C9F7;
+            border-radius: 0 0 0 10px;
+        }
+
+        .bottom-right {
+            bottom: 0;
+            right: 0;
+            background-color: #A8D08D;
+            border-radius: 0 0 10px 0;
+        }
+
+        .diamond {
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            transform: rotate(45deg);
+            background-color: #F7FFF7;
+            border: 2px solid #333;
+            top: 35%;
+            left: 35%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 10;
+            transition: background-color 0.3s;
+        }
+        
+        .diamond:hover {
+            background-color: #e0e0e0;
+        }
+
+        .diamond-text {
+            transform: rotate(-45deg);
+            font-weight: bold;
+            user-select: none;
+        }
+
+        /* Toast notification styles */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        /* Token modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal {
+            background-color: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .modal h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .token-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .token-info button {
+            margin-left: 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        @media (max-width: 480px) {
+            .quadrant, .diamond-text {
+                font-size: 14px;
+            }
+            
+            .toast {
+                font-size: 14px;
+                padding: 10px 16px;
+            }
+            
+            .modal h2 {
+                font-size: 18px;
+            }
+            
+            .form-group input, .button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="main-container" style="display: none;">
+        <div class="quadrant top-left" onclick="recordResponse('NHE')">Neg, High Energy</div>
+        <div class="quadrant top-right" onclick="recordResponse('PHE')">Pos, High Energy</div>
+        <div class="quadrant bottom-left" onclick="recordResponse('NLE')">Neg, Low Energy</div>
+        <div class="quadrant bottom-right" onclick="recordResponse('PLE')">Pos, Low Energy</div>
+        <div class="diamond" onclick="recordResponse('N')">
+            <div class="diamond-text">Neutral</div>
+        </div>
+    </div>
+
+    <div id="token-info" class="token-info" style="display: none;">
+        <span>Token: <span id="token-display"></span></span>
+        <button onclick="clearToken()">Clear</button>
+    </div>
+
+    <div id="token-modal" class="modal-overlay" style="display: none;">
+        <div class="modal">
+            <h2>Authentication Required</h2>
+            <div class="form-group">
+                <label for="token-input">Please enter your token:</label>
+                <input type="text" id="token-input" placeholder="Enter token">
+            </div>
+            <button class="button" onclick="saveToken()">Submit</button>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // Get DOM elements
+        const toast = document.getElementById('toast');
+        const mainContainer = document.getElementById('main-container');
+        const tokenModal = document.getElementById('token-modal');
+        const tokenInfo = document.getElementById('token-info');
+        const tokenDisplay = document.getElementById('token-display');
+        const tokenInput = document.getElementById('token-input');
+        
+        let toastTimeout;
+        
+        // Check for token on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkToken();
+        });
+        
+        function checkToken() {
+            const token = localStorage.getItem('appToken');
+            
+            if (token) {
+                // Token exists, show app and token info
+                mainContainer.style.display = 'block';
+                tokenInfo.style.display = 'flex';
+                tokenModal.style.display = 'none';
+                
+                // Display part of the token (first 4 chars + ...)
+                tokenDisplay.textContent = token.substring(0, 4) + '...';
+            } else {
+                // No token, show the modal
+                mainContainer.style.display = 'none';
+                tokenInfo.style.display = 'none';
+                tokenModal.style.display = 'flex';
+            }
+        }
+        
+        function saveToken() {
+            const token = tokenInput.value.trim();
+            
+            if (token) {
+                localStorage.setItem('appToken', token);
+                tokenInput.value = '';
+                checkToken();
+                showToast('Token saved successfully');
+            } else {
+                showToast('Please enter a valid token');
+            }
+        }
+        
+        function clearToken() {
+            localStorage.removeItem('appToken');
+            checkToken();
+            showToast('Token cleared');
+        }
+
+        function showToast(message) {
+            clearTimeout(toastTimeout);
+            toast.textContent = message;
+            toast.classList.add('show');
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        function recordResponse(position) {
+            const token = localStorage.getItem('appToken');
+
+            // It's difficult to test whether this succeeded or failed, because of CORS.
+            // So we just kinda have to hope. Nothing about this application is critical anyway.
+            fetch(`https://docs.google.com/forms/d/e/1FAIpQLSfuTjoLHpIifS-aQ4Geib6E5VO4ysY6aZYIKdAjjpH2zCErXQ/formResponse?entry.1006447547=${token}&entry.1789023603=${position}`, {
+                method: "POST"
+            });
+            showToast(position);
+        }
+    </script>
+</body>
+</html>
